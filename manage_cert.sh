@@ -15,7 +15,7 @@
 
 
 
-if [ ! -f $KEYSTORE ] || [ ${CLOBBER_KEYSTORE} == 'Y']; then 
+if [ ! -f $KEYSTORE ] || [ ${CLOBBER_KEYSTORE} == 'Y'] ; then 
   echo "Starting script to create new keystore and generate CSR."
  
   if [ ! -d $INFILES ]; then 
@@ -78,17 +78,20 @@ if [ ! -f $KEYSTORE ] || [ ${CLOBBER_KEYSTORE} == 'Y']; then
   # To change the jks keyStore password by using this command: 
   # keytool -storepasswd -new newpassword -keystore DigiCert-CAChains.jks -storepass changeme
   # To change the p12 keyStore password by using this command: 
-  keytool -storepasswd -new KS_PASSWD -keystore $KEYSTORE -storepass $DIGICERT_DEFAULT_KEYSTORE_CA_BUNDLE_PASSWORD
+
+  keytool -storepasswd -new $KS_PASSWD -keystore $KEYSTORE -storepass $DIGICERT_DEFAULT_KEYSTORE_CA_BUNDLE_PASSWORD
 
   # To create an alias using keytool:
 
-  keytool -genkey -alias $KEY_ALIAS_NAME -keyalg RSA -keysize 2048 -keystore $KEYSTORE
+  #keytool -genkey -alias $KEY_ALIAS_NAME -keyalg RSA -keysize 2048 -keystore $KEYSTORE -storepass $KS_PASSWD
 
+  #keytool -genkey -alias $KEY_ALIAS_NAME -keyalg RSA -keysize 2048 -keystore $KEYSTORE -storepass $KS_PASSWD
+  keytool -genkeypair -alias $KEY_ALIAS_NAME -keyalg RSA -keysize 2048 -validity 365 -keystore $KEYSTORE -storepass $KS_PASSWD -keypass $KS_PASSWD -dname "$DNAME"
   # generate private key pair
   #keytool -genkeypair -alias $KEY_ALIAS_NAME -keyalg RSA -keysize 2048 -validity 365 -keystore $KEYSTORE -storepass $KS_PASSWD -keypass $KS_PASSWD -dname "$DNAME"
   # To generate a certificate signing request (CSR) from keystore:
 
-  keytool -certreq -alias $KEY_ALIAS_NAME -file $COMPLETE/${KEY_ALIAS_NAME}_CSR.txt -keystore $KEYSTORE
+  keytool -certreq -alias $KEY_ALIAS_NAME -file $COMPLETE/${KEY_ALIAS_NAME}_CSR.txt -keystore $KEYSTORE -storepass $KS_PASSWD -dname "$DNAME"
 
 else  # keystore file exists
   echo "Starting script to renew a certificate and generate renewal CSR OR"
