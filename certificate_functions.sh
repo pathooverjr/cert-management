@@ -155,3 +155,25 @@ function findIssuer()
     fi
 
 }
+
+function export_jks_2_p12()
+{
+
+    keytool -importkeystore -srckeystore $KEYSTORE -destkeystore $KEY_PATH/node-${CLUSTER_NAME}.p12 -deststoretype pkcs12 -srcstorepass $KS_PASSWD -deststorepass $KS_PASSWD
+ 
+}
+
+function import_issued_cert()
+{
+
+    echo "Importing an issued certificate to the $KEYSTORE"
+    echo "Running: keytool -import -alias $KEY_ALIAS_NAME -file $CERT_PATH/$CERT -keystore $KEYSTORE -storepass XXXXXXX"
+    # To import the issued certificate:
+    keytool -import -alias $KEY_ALIAS_NAME -file $CERT_PATH/$CERT -keystore $KEYSTORE -storepass $KS_PASSWD
+     
+}
+
+function generate_renewal_csr()
+{
+    echo "Renewing a certificate..."
+}

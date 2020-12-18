@@ -50,11 +50,11 @@ WORK=./work
 COMPLETE=./complete 
 
 ## TESTING:  Creating non existing works
-if [ ! -d $WORK ]; then 
+if [[ ! -d $WORK ]]; then 
     echo "Creating $WORK directory..."
     mkdir -p $WORK
 fi
-if [ ! -d $COMPLETE ]; then 
+if [[ ! -d $COMPLETE ]]; then 
     echo "Creating $COMPLETE directory..."
     mkdir -p $COMPLETE
 fi

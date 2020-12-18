@@ -13,7 +13,8 @@
 # and added to the copy placed in $COMPLETE and it already contains the CA chain, aka the intermediate and root CA certificates
 # 
 
-
+ echo "Starting script..."
+ 
 
 if [[ ! -f $KEYSTORE ]] || [[ "$CLOBBER_KEYSTORE" == 'Y' ]] ; then
   echo "Starting script to create new keystore and generate CSR."
@@ -73,13 +74,13 @@ if [[ ! -f $KEYSTORE ]] || [[ "$CLOBBER_KEYSTORE" == 'Y' ]] ; then
   fi
     
   #echo "Creating $KEYSTORE from a copy of $DIGICERT_CA_CHAIN_BUNDLE..."
-  #cp $DIGICERT_CA_CHAIN_BUNDLE $KEYSTORE
+  cp $DIGICERT_CA_CHAIN_BUNDLE $KEYSTORE
 
   # To change the jks keyStore password by using this command: 
   # keytool -storepasswd -new newpassword -keystore DigiCert-CAChains.jks -storepass changeme
   # To change the p12 keyStore password by using this command: 
 
-  #keytool -storepasswd -new $KS_PASSWD -keystore $KEYSTORE -storepass $DIGICERT_DEFAULT_KEYSTORE_CA_BUNDLE_PASSWORD
+  keytool -storepasswd -new $KS_PASSWD -keystore $KEYSTORE -storepass $DIGICERT_DEFAULT_KEYSTORE_CA_BUNDLE_PASSWORD
 
   # To create an alias using keytool:
 
@@ -97,20 +98,17 @@ else  # keystore file exists
   # If the CSR already exists import the certificate from the CA
   if [[ -e $COMPLETE/${KEY_ALIAS_NAME}_CSR.txt ]] ; then
       # If we have a renewal keystore then import the certificate here
-      echo "Importing intermediate"
-      import_ca_certs
-      echo "Importing an issued certificate to the $KEYSTORE"
-      echo "Running: keytool -import -alias $KEY_ALIAS_NAME -file $CERT_PATH/$CERT -keystore $KEYSTORE -storepass XXXXXXX"
-      # To import the issued certificate:
-      keytool -import -alias $KEY_ALIAS_NAME -file $CERT_PATH/$CERT -keystore $KEYSTORE -storepass $KS_PASSWD
-     
+      #echo "Importing intermediate"
+      #import_ca_certs
+      import_issued_cert
       # TODO: Export a copy to p12 format 
+      export_jks_2_p12
+      # move the current CSR that has already been used to issued the current certificate
+      # This allows the next run to create a new CSR for the renewal
+      mv $COMPLETE/${KEY_ALIAS_NAME}_CSR.txt $COMPLETE/${KEY_ALIAS_NAME}_CSR.old 
   else
-      echo "Renewing a certificate..."
-      #generate renewal CSR    
+      
+      #generate renewal CSR, this function is empty and needs to be completed
+      generate_renewal_csr    
   fi
 fi  # end if keystore file exists
-
-
-
-
