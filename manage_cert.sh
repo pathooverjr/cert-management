@@ -15,10 +15,10 @@
 
 
 
-if [ ! -f $KEYSTORE ] || [ ${CLOBBER_KEYSTORE} == 'Y'] ; then 
+if [[ ! -f $KEYSTORE ]] || [[ "$CLOBBER_KEYSTORE" == 'Y' ]] ; then
   echo "Starting script to create new keystore and generate CSR."
  
-  if [ ! -d $INFILES ]; then 
+  if [[ ! -d $INFILES ]]; then 
     # TODO 
     echo "Directory $INFILES does not exist."
     echo "Please create a directory called $INFILES and copy DigiCert-CAChains.p12"
@@ -29,25 +29,25 @@ if [ ! -f $KEYSTORE ] || [ ${CLOBBER_KEYSTORE} == 'Y'] ; then
     exit -1
   fi
   
-  if [ ! -e $KEY_PATH ]; then
+  if [[ ! -e $KEY_PATH ]]; then
       echo "Creating the directory for the keystore at:"
       echo $KEY_PATH 
       mkdir -p $KEY_PATH
-      if [ $? -ne 0 ] ; then
+      if [[ $? -ne 0 ]] ; then
       echo "Fatal script error: Failed to create directory: $KEY_PATH"
-        exit -1
+        exit 1
       fi
   fi
 
   
   echo "Generating New keystore file from source with CA-Chains already present."
   echo "Checking that $DIGICERT_CA_CHAIN_BUNDLE exists..."
-  if [ ! -f $DIGICERT_CA_CHAIN_BUNDLE ]; then 
+  if [[ ! -f $DIGICERT_CA_CHAIN_BUNDLE ]]; then 
     echo "Fatal Error: Expecting script variable DIGICERT_CA_CHAIN_BUNDLE defined in config.sh"
     echo "to exist at the following:   $DIGICERT_CA_CHAIN_BUNDLE"
     echo "Please update. " 
     echo $DIGICERT_CA_CHAIN_BUNDLE
-    exit -1  
+    exit 1  
   fi
   echo "$DIGICERT_CA_CHAIN_BUNDLE exists..."
   # You will need to change the password to your required password. 
@@ -56,7 +56,7 @@ if [ ! -f $KEYSTORE ] || [ ${CLOBBER_KEYSTORE} == 'Y'] ; then
   echo "Checking that $KEYSTORE exists which means CLOBBER_KEYSTORE was set..."
   # if the keystore already exists assume clobber was set so backup
   # existing keystore just in case 
-  if [ -f $KEYSTORE ]  ; then 
+  if [[ -f $KEYSTORE ]]  ; then 
     echo "$KEYSTORE exists..."
     ## Get current date ##
     _now=$(date +"%m_%d_%Y")
@@ -72,20 +72,17 @@ if [ ! -f $KEYSTORE ] || [ ${CLOBBER_KEYSTORE} == 'Y'] ; then
     echo "$KEYSTORE does not exist, creating new keystore..."
   fi
     
-  echo "Creating $KEYSTORE from a copy of $DIGICERT_CA_CHAIN_BUNDLE..."
-  cp $DIGICERT_CA_CHAIN_BUNDLE $KEYSTORE
+  #echo "Creating $KEYSTORE from a copy of $DIGICERT_CA_CHAIN_BUNDLE..."
+  #cp $DIGICERT_CA_CHAIN_BUNDLE $KEYSTORE
 
   # To change the jks keyStore password by using this command: 
   # keytool -storepasswd -new newpassword -keystore DigiCert-CAChains.jks -storepass changeme
   # To change the p12 keyStore password by using this command: 
 
-  keytool -storepasswd -new $KS_PASSWD -keystore $KEYSTORE -storepass $DIGICERT_DEFAULT_KEYSTORE_CA_BUNDLE_PASSWORD
+  #keytool -storepasswd -new $KS_PASSWD -keystore $KEYSTORE -storepass $DIGICERT_DEFAULT_KEYSTORE_CA_BUNDLE_PASSWORD
 
   # To create an alias using keytool:
 
-  #keytool -genkey -alias $KEY_ALIAS_NAME -keyalg RSA -keysize 2048 -keystore $KEYSTORE -storepass $KS_PASSWD
-
-  #keytool -genkey -alias $KEY_ALIAS_NAME -keyalg RSA -keysize 2048 -keystore $KEYSTORE -storepass $KS_PASSWD
   keytool -genkeypair -alias $KEY_ALIAS_NAME -keyalg RSA -keysize 2048 -validity 365 -keystore $KEYSTORE -storepass $KS_PASSWD -keypass $KS_PASSWD -dname "$DNAME"
   # generate private key pair
   #keytool -genkeypair -alias $KEY_ALIAS_NAME -keyalg RSA -keysize 2048 -validity 365 -keystore $KEYSTORE -storepass $KS_PASSWD -keypass $KS_PASSWD -dname "$DNAME"
@@ -96,15 +93,17 @@ if [ ! -f $KEYSTORE ] || [ ${CLOBBER_KEYSTORE} == 'Y'] ; then
 else  # keystore file exists
   echo "Starting script to renew a certificate and generate renewal CSR OR"
   echo "Import an issued certificate from a previously generated CSR"
-  exit 0
-  # If the CSR already exists import the certificate from the CA
-  if [ -e $COMPLETE/${KEY_ALIAS_NAME}_CSR.txt ] ; then
-      # If we have a renewal keystore then import the certificate here
-      echo "Importing an issued certificate to the $KEYSTOREmini weld torch
-      "
-      # To import the issued certificate:
-      keytool -import -alias $KEY_ALIAS_NAME -file $CERT -keystore $KEYSTORE
   
+  # If the CSR already exists import the certificate from the CA
+  if [[ -e $COMPLETE/${KEY_ALIAS_NAME}_CSR.txt ]] ; then
+      # If we have a renewal keystore then import the certificate here
+      echo "Importing intermediate"
+      import_ca_certs
+      echo "Importing an issued certificate to the $KEYSTORE"
+      echo "Running: keytool -import -alias $KEY_ALIAS_NAME -file $CERT_PATH/$CERT -keystore $KEYSTORE -storepass XXXXXXX"
+      # To import the issued certificate:
+      keytool -import -alias $KEY_ALIAS_NAME -file $CERT_PATH/$CERT -keystore $KEYSTORE -storepass $KS_PASSWD
+     
       # TODO: Export a copy to p12 format 
   else
       echo "Renewing a certificate..."

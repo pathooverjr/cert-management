@@ -18,7 +18,7 @@ clear
 # If you want to start over and generate a new CSR change to Y (Yes)
 CLOBBER_KEYSTORE="N"
 
-CLUSTER_NAME="VCA01016-TokenSerivce"
+CLUSTER_NAME="VCA01016-TokenService"
 
 CH_PHRASE="TokenServiceClusterTest1!"
  
@@ -67,7 +67,6 @@ fi
 
 DIGICERT_CA_CHAIN_BUNDLE=$INFILES/DigiCert-CAChains.$KEYSTORE_TYPE
 DIGICERT_DEFAULT_KEYSTORE_CA_BUNDLE_PASSWORD="changeme"
-
 
 KEY_PATH=$COMPLETE/$CLUSTER_NAME
 
