@@ -177,3 +177,51 @@ function generate_renewal_csr()
 {
     echo "Renewing a certificate..."
 }
+function match_cert_2_key()
+{
+    
+    set -eu -o pipefail
+
+
+    TMP="$(mktemp -d)"
+
+    PRIVATEKEY=`export_key_from_p12`
+    CERTFILE=$CERT_PATH/$CERT
+    # Checking internal consistency of private key
+    openssl rsa -in "${PRIVATEKEY}" -check -noout
+
+    # Checking spkisha256 hash
+    hashkey=$(openssl pkey -in "${PRIVATEKEY}" -pubout -outform der | sha256sum)
+    hashcrt=$(openssl x509 -in "${CERTFILE}" -pubkey | openssl pkey -pubin -pubout -outform der | sha256sum)
+    if [[ "${hashkey}" = "${hashcrt}" ]]; then
+        echo "SPKI SHA256 hash matches"
+    else
+        echo "SPKI SHA256 hash does not match"
+    fi
+
+    # check test signature
+    openssl x509 -in "${CERTFILE}" -noout -pubkey > "${TMP}/pubkey.pem"
+    dd if=/dev/urandom of="${TMP}/rnd" bs=32 count=1 status=none
+    openssl rsautl -sign -pkcs -inkey "${PRIVATEKEY}" -in "${TMP}/rnd" -out "${TMP}/sig"
+    openssl rsautl -verify -pkcs -pubin -inkey "${TMP}/pubkey.pem" -in "${TMP}/sig" -out "${TMP}/check"
+
+    if cmp -s "${TMP}/check" "${TMP}/rnd"; then
+        echo "Signature ok"
+    else
+        echo "Signature verify failed"
+    fi
+
+    rm -rf "${TMP}"
+
+
+
+}
+
+function export_key_from_p12()
+{
+    local P12KEYSTORE=$KEY_PATH/node-${CLUSTER_NAME}.p12
+    local PRIVATEKEY=$COMPLETE/${CN_HOST//./_}.key
+    #keytool -exportcert -rfc -alias $KEY_ALIAS_NAME -file $PRIVATEKEY -keystore $P12KEYSTORE -storepass $KS_PASSWD -storetype PKCS12 -v
+    openssl pkcs12 -in $P12KEYSTORE  -nodes -nocerts -out $PRIVATEKEY -passin pass:$KS_PASSWD
+    echo "$PRIVATEKEY"
+}
