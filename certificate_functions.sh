@@ -67,6 +67,10 @@ function set_cert_name()
             CERT_TYPE="cer"
             CERT="$CERT.$CERT_TYPE"
         fi
+        if [[ -f $CERT_PATH/$CERT.crt ]] ; then
+            CERT_TYPE="crt"
+            CERT="$CERT.$CERT_TYPE"
+        fi
         echo "CERT set to $CERT"
     else
         echo "CN_HOST not set in config.sh"
@@ -175,53 +179,34 @@ function import_issued_cert()
 
 function generate_renewal_csr()
 {
-    echo "Renewing a certificate..."
+    echo "Generating a renewal CSR..."
+    # Copy installed keystore to the complete directory before generating CSR
+    # if keystore already exist in the destination directory make a backup
+    backup_keystore_generated_by_previous_cert_mangement_script()
+    cp $SCRIPT_PATH/$CLUSTER_NAME/node-${CLUSTER_NAME}.jks $KEYSTORE
+    keytool -certreq -alias $KEY_ALIAS_NAME -file $COMPLETE/${KEY_ALIAS_NAME}_CSR.txt -keystore $KEYSTORE -storepass $KS_PASSWD -dname "$DNAME"
+
 }
-function match_cert_2_key()
+
+function import_renewal_cert()
 {
+    echo "Importing an issued renewal certificate to the $KEYSTORE"
+    echo "Running: keytool -import -alias $KEY_ALIAS_NAME -file $CERT_PATH/$CERT -keystore $KEYSTORE -storepass XXXXXXX"
+    # To import the issued certificate:
+    keytool -import -alias $KEY_ALIAS_NAME -file $CERT_PATH/$CERT -keystore $KEYSTORE -storepass $KS_PASSWD
     
-    set -eu -o pipefail
-
-
-    TMP="$(mktemp -d)"
-
-    PRIVATEKEY=`export_key_from_p12`
-    CERTFILE=$CERT_PATH/$CERT
-    # Checking internal consistency of private key
-    openssl rsa -in "${PRIVATEKEY}" -check -noout
-
-    # Checking spkisha256 hash
-    hashkey=$(openssl pkey -in "${PRIVATEKEY}" -pubout -outform der | sha256sum)
-    hashcrt=$(openssl x509 -in "${CERTFILE}" -pubkey | openssl pkey -pubin -pubout -outform der | sha256sum)
-    if [[ "${hashkey}" = "${hashcrt}" ]]; then
-        echo "SPKI SHA256 hash matches"
-    else
-        echo "SPKI SHA256 hash does not match"
-    fi
-
-    # check test signature
-    openssl x509 -in "${CERTFILE}" -noout -pubkey > "${TMP}/pubkey.pem"
-    dd if=/dev/urandom of="${TMP}/rnd" bs=32 count=1 status=none
-    openssl rsautl -sign -pkcs -inkey "${PRIVATEKEY}" -in "${TMP}/rnd" -out "${TMP}/sig"
-    openssl rsautl -verify -pkcs -pubin -inkey "${TMP}/pubkey.pem" -in "${TMP}/sig" -out "${TMP}/check"
-
-    if cmp -s "${TMP}/check" "${TMP}/rnd"; then
-        echo "Signature ok"
-    else
-        echo "Signature verify failed"
-    fi
-
-    rm -rf "${TMP}"
-
-
-
 }
 
-function export_key_from_p12()
+function backup_keystore_generated_by_previous_cert_mangement_script()
 {
-    local P12KEYSTORE=$KEY_PATH/node-${CLUSTER_NAME}.p12
-    local PRIVATEKEY=$COMPLETE/${CN_HOST//./_}.key
-    #keytool -exportcert -rfc -alias $KEY_ALIAS_NAME -file $PRIVATEKEY -keystore $P12KEYSTORE -storepass $KS_PASSWD -storetype PKCS12 -v
-    openssl pkcs12 -in $P12KEYSTORE  -nodes -nocerts -out $PRIVATEKEY -passin pass:$KS_PASSWD
-    echo "$PRIVATEKEY"
+    if [[ -f $KEYSTORE ]]  ; then 
+    echo "$KEYSTORE exists..."
+    ## Get current date ##
+    _now=$(date +"%m_%d_%Y")
+    _keystore_extension="${KEYSTORE##*.}"
+    _keystore_backup="${KEYSTORE##*/}_$_now.$_keystore_extension"
+    echo "Replacing existing keystore and generating new CSR"
+    printf "%s to %s\n" $KEYSTORE $_keystore_backup
+    cp $KEYSTORE $_keystore_backup
+    rm $KEYSTORE
 }

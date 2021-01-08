@@ -57,16 +57,7 @@ if [[ ! -f $KEYSTORE ]] || [[ "$CLOBBER_KEYSTORE" == 'Y' ]] ; then
   echo "Checking that $KEYSTORE exists which means CLOBBER_KEYSTORE was set..."
   # if the keystore already exists assume clobber was set so backup
   # existing keystore just in case 
-  if [[ -f $KEYSTORE ]]  ; then 
-    echo "$KEYSTORE exists..."
-    ## Get current date ##
-    _now=$(date +"%m_%d_%Y")
-    _keystore_extension="${KEYSTORE##*.}"
-    _keystore_backup="${KEYSTORE##*/}_$_now.$_keystore_extension"
-    echo "Replacing existing keystore and generating new CSR"
-    printf "%s to %s\n" $KEYSTORE $_keystore_backup
-    cp $KEYSTORE $_keystore_backup
-    rm $KEYSTORE
+  backup_keystore_generated_by_previous_cert_mangement_script()
     # TODO backup and rm previous CSR if exists, because we are starting over
     # or just allow over write below
   else
@@ -75,12 +66,15 @@ if [[ ! -f $KEYSTORE ]] || [[ "$CLOBBER_KEYSTORE" == 'Y' ]] ; then
     
   #echo "Creating $KEYSTORE from a copy of $DIGICERT_CA_CHAIN_BUNDLE..."
   cp $DIGICERT_CA_CHAIN_BUNDLE $KEYSTORE
+  echo "truststore directory/filename is: $TRUSTSTORE"
+  cp $DIGICERT_CA_CHAIN_BUNDLE $TRUSTSTORE
 
   # To change the jks keyStore password by using this command: 
   # keytool -storepasswd -new newpassword -keystore DigiCert-CAChains.jks -storepass changeme
   # To change the p12 keyStore password by using this command: 
 
   keytool -storepasswd -new $KS_PASSWD -keystore $KEYSTORE -storepass $DIGICERT_DEFAULT_KEYSTORE_CA_BUNDLE_PASSWORD
+  keytool -storepasswd -new $KS_PASSWD -keystore $TRUSTSTORE -storepass $DIGICERT_DEFAULT_KEYSTORE_CA_BUNDLE_PASSWORD
 
   # To create an alias using keytool:
 

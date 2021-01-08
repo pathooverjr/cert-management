@@ -14,16 +14,17 @@ clear
 # Source dependent certificate functions
 . ./certificate_functions.sh
 
+SCRIPT_PATH=`pwd`
 #start_dump_script_vars
 # If you want to start over and generate a new CSR change to Y (Yes)
 CLOBBER_KEYSTORE="N"
 
-CLUSTER_NAME="VCA01016-TokenService"
+CLUSTER_NAME="PCA01017-TokenService"
 
 CH_PHRASE="TokenServiceClusterTest1!"
  
 # Common name used for the certificate 
-CN_HOST="vca00235.ute.fedex.com"
+CN_HOST="pca00372.inf.fedex.com"
 
 # Group email address used in the certificate request
 GROUP_EMAIL_ADDRESS="dba-dom@corp.ds.fedex.com"
@@ -70,11 +71,12 @@ DIGICERT_DEFAULT_KEYSTORE_CA_BUNDLE_PASSWORD="changeme"
 
 KEY_PATH=$COMPLETE/$CLUSTER_NAME
 
-KS_PASSWD=ZaByCx18
+KS_PASSWD=TTrrSS18
 
  
 
 KEYSTORE=$KEY_PATH/node-${CLUSTER_NAME}.$KEYSTORE_TYPE
+TRUSTSTORE=$KEY_PATH/truststore-cassandra-symantec.jks
 PRIVATE_KEYSTORE=private-${CLUSTER_NAME}.$KEYSTORE_TYPE
 PRIVATE_KEYFILE=private-${CLUSTER_NAME}.key
 KEY_ALIAS_NAME=cassandra-${CLUSTER_NAME}
@@ -91,12 +93,6 @@ set_cert_name
 #DIGICERT_CA_INTERMEDIATE=DigiCertCA2.pem
 #DIGICERT_CA_ROOT=TrustedRoot.pem
 #SYMANTEC_CERTS=concatenated-Verisign-IntermediateRootBundle.cer
-
- 
-
-#TRUSTSTORE=truststore-cassandra-symantec.jks
-
-TRUSTSTORE=truststore-cassandra-digikey.$KEYSTORE_TYPE 
 
  
 
